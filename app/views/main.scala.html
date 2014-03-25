@@ -1,0 +1,32 @@
+@(title: String)(content: Html)
+
+<!DOCTYPE html>
+
+<html>
+    <head>
+        <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1">
+    
+        <title>@title</title>
+        <link rel="stylesheet" media="screen" href="@routes.Assets.at("stylesheets/backgrid-moment-cell.min.css")">
+        <link rel="stylesheet" media="screen" href="@routes.Assets.at("stylesheets/bootstrap-dialog.min.css")">
+        <link rel="shortcut icon" type="image/png" href="@routes.Assets.at("images/favicon.png")">
+    	<link rel="stylesheet" type="text/css" media="screen" href="@routes.WebJarAssets.at(WebJarAssets.locate("bootstrap.min.css"))">
+    	<link rel="stylesheet" type="text/css" media="screen" href="@routes.WebJarAssets.at(WebJarAssets.locate("backgrid.min.css"))">
+    	<link rel="stylesheet" type="text/css" media="screen" href="@routes.WebJarAssets.at(WebJarAssets.locate("datepicker3.css"))">
+        <link rel="stylesheet" media="screen" href="@routes.Assets.at("stylesheets/main.css")">
+    	<script type="text/javascript" src="@routes.WebJarAssets.at(WebJarAssets.locate("jquery.min.js"))"></script>
+        <script type="text/javascript" src="@routes.WebJarAssets.at(WebJarAssets.locate("bootstrap.min.js"))"></script>
+        <script type="text/javascript" src="@routes.WebJarAssets.at(WebJarAssets.locate("underscore.js"))"></script>
+        <script type="text/javascript" src="@routes.WebJarAssets.at(WebJarAssets.locate("backbone.min.js"))"></script>
+        <script type="text/javascript" src="@routes.WebJarAssets.at(WebJarAssets.locate("backgrid.min.js"))"></script>
+        <script type="text/javascript" src="@routes.WebJarAssets.at(WebJarAssets.locate("bootstrap-datepicker.js"))"></script>
+        <script type="text/javascript" src="@routes.WebJarAssets.at(WebJarAssets.locate("moment.min.js"))"></script>
+        <script type="text/javascript" src="@routes.Assets.at("javascripts/backgrid-moment-cell.min.js")"></script>
+        <script type="text/javascript" src="@routes.Assets.at("javascripts/bootstrap-dialog.min.js")"></script>
+    </head>
+    <body>
+        @content
+    </body>
+
+    
+</html>

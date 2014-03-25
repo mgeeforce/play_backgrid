@@ -1,0 +1,304 @@
+@(currentPage: com.avaje.ebean.Page[Item], currentSortBy: String, currentOrder: String, currentFilter: String)
+
+@import helper._
+
+@****************************************
+* Helper generating navigation links    *
+****************************************@
+@link(newPage:Int, newSortBy:String) = @{
+    
+    var sortBy = currentSortBy
+    var order = currentOrder
+    
+    if(newSortBy != null) {
+        sortBy = newSortBy
+        if(currentSortBy == newSortBy) {
+            if(currentOrder == "asc") {
+                order = "desc"
+            } else {
+                order = "asc"
+            }
+        } else {
+            order = "asc"
+        }
+    }
+    
+    // Generate the link
+   // routes.Application.list(newPage, sortBy, order, currentFilter)
+    
+}
+
+@**********************************
+* Helper generating table headers *
+***********************************@
+@header(key:String, title:String) = {
+    <th class="@key.replace(".","_") header @if(currentSortBy == key) @{if(currentOrder == "asc") "headerSortDown" else "headerSortUp"}">
+        <a href="@link(0, key)">@title</a>
+    </th>
+}
+
+@main("Welcome to Play") {
+
+
+<div class="container">
+	<div class="row">
+		<h1>Grid Examples</h1>
+	</div>
+	<div class="row">
+		<table class="table table-striped table-bordered">
+			<thead>
+			  	<tr>
+                    @header("id", "ID")
+                    @header("name", "Name")
+                    @header("description", "Description")
+					@header("quantity", "Quantity")
+					@header("amount", "Amount")
+					@header("date", "Date")
+					<td/>
+                </tr>
+            </thead>
+            <tbody>
+	             @for(item <- currentPage.getList) {
+	                    <tr>
+	                        <td>@item.id</td>
+	                        <td>@item.name</td>
+	                        <td>
+	                            @if(item.description== null) {
+	                                <em>-</em>
+	                            } else {
+	                                @item.description</a>
+	                            }
+	                        </td>
+	                        <td>
+	                            @if(item.quantity== null) {
+	                                <em>-</em>
+	                            } else {
+	                                @item.quantity
+	                            }
+	                        </td>
+	                        <td>
+	                            @if(item.amount== null) {
+	                                <em>-</em>
+	                            } else {
+	                                @item.amount
+	                            }
+	                        </td>
+	                        <td>
+	                            @if(item.date== null) {
+	                                <em>-</em>
+	                            } else {
+	                                @item.date.format("yyyy-MM-dd")
+	                            }
+	                        </td>
+	                        <td><a href="@routes.Application.deleteGET(item.id)" class="btn btn-sm btn-danger"><span class="glyphicon glyphicon-trash"></span> Delete</a>
+	                        </td>
+	                    </tr>
+	            	} 
+	            
+            </tbody>
+		</table>
+	</div>
+	<div class="row">
+		<div id="grid"></div>
+			<button id="add" type="button" class="btn btn-primary">Add an Item</button>
+			<button id="addModal" type="button" class="btn btn-primary">Add an Item (modal)</button>
+	</div>
+</div>
+
+    <div id="itemModal" class="modal">
+    	<div class="modal-dialog">
+    		<div class="modal-content">
+				  <div class="modal-header">
+				    <button type="button" class="close" data-dismiss="modal" aria-hidden="true">&times;</button>
+				    <h3 class="modal-title">Create Item</h3>
+				  </div>
+				  <div class="modal-body">
+    				<h3>Create a new item</h3>
+    				@form(routes.Application.createItem(), 'class -> "form-horizontal") {
+				        <fieldset>
+				            @inputText(Application.getForm()("name"), '_label -> "Name")
+				            @inputText(Application.getForm()("description"), '_label -> "Description")
+				            @inputText(Application.getForm()("amount"), '_label -> "Amount")
+				            @inputText(Application.getForm()("quantity"), '_label -> "Quantity")
+				            
+				        </fieldset>
+				  </div>
+				  <div class="modal-footer">
+			        <button type="button" class="btn btn-default" data-dismiss="modal">Close</button>
+        			<button id="saveBtn" type="submit" class="btn btn-primary">Save changes</button>
+				  </div>
+    				}
+			</div>
+		</div>
+	</div>
+
+<script type="text/javascript">
+	$(document).ready(function() {
+
+	
+		var MyDatePickerCellEditor = Backgrid.InputCellEditor.extend({
+		    events:{},
+		    initialize:function(){
+		        Backgrid.InputCellEditor.prototype.initialize.apply(this, arguments);
+		        var input = this;
+		        console.log(input);
+		        $(this.el).datepicker({
+			        format: "yyyy-mm-dd",
+			        autoclose: true,
+			        todayHighlight: true
+		        }).on("hide", function(newValue){
+	                var command = new Backgrid.Command({});
+	                input.model.set(input.column.get("name"), newValue.date);
+	                input.model.trigger("backgrid:edited", input.model, input.column, command);
+					console.log("hide event heard and changed model attrs = "+input.model.changedAttributes());
+	                command = input = null;
+					});
+		    }
+		});
+	
+		var Item = Backbone.Model.extend({
+			initialize: function() {
+			   Backbone.Model.prototype.initialize.apply(this, arguments);
+			    this.on("change", function (model, options) {
+					console.log("change event heard ....");
+				    console.log(model.changedAttributes());
+			    	if (options && options.save === false) return;
+				    if (model.hasChanged()) {  //model.save();
+				      if( !$("#actionDivSave"+model.id ).find("#save").length ) {
+				      	str = "#actionDivSave"+model.id;
+				      	$(str).prepend("<button id='save' type='button' class='btn-success glyphicon glyphicon-floppy-disk'> Save</button>");
+				      }
+				    } 
+			    });
+			}
+		});
+
+		
+		var Items = Backbone.Collection.extend({
+	  		model: Item,
+	  		url: "api/items"
+		});
+	
+		var items = new Items();
+	
+		// Fetch some items from the url
+		items.fetch();
+
+		var DeleteCell = Backgrid.Cell.extend({
+		    template: function() {
+			    return _.template("<div id='actionDivSave"+this.model.id+"'><button id='actionDivDel"+this.model.id+"' type='button' class='close' aria-hidden='true'>x</button><div>");
+		    },
+		    events: {
+		      "click": "deleteRow"
+		    },
+		    deleteRow: function (e) {
+		      e.preventDefault();
+			  confirmRemoval(this.model);
+		    },
+		    render: function () {
+		      this.$el.html(this.template());
+		      //this.delegateEvents();
+		      return this;
+		    }
+		});
+
+		//container for action links	
+		var ActionCell = Backgrid.Cell.extend({
+			template: function() {
+				return _.template("<div id='actionDivSave"+this.model.id+"'><button id='delete' type='button' class='close' aria-hidden='true'>x</button></div>");
+			},
+			events: {
+				"click #delete": "deleteRow",
+				"click #save": "saveRow"
+			},
+			deleteRow: function(e) {
+				e.preventDefault();
+				//alert("It worked");
+				confirmRemoval(this.model);
+			},
+			saveRow: function(e) {
+				e.preventDefault();
+				console.log("in saveRow - about to call model.save()");
+				this.model.save();
+				$("#actionDivSave"+this.model.id ).find("#save").remove();
+			},
+			render: function () {
+			      this.$el.html(this.template());
+			      this.delegateEvents();
+			      return this;
+			}
+		});
+
+		 function confirmRemoval(model) {
+			 BootstrapDialog.confirm('Are you sure you want to delete this record?', function(result){
+	            if(result) {
+             	  model.destroy();
+	            }
+	        });
+		 }
+				
+		// Column definitions
+		var columns = [{
+		  name: "id", // The key of the model attribute
+		  label: "ID", // The name to display in the header
+		  editable: false, // By default every cell in a column is editable, but *ID* shouldn't be
+		  // Defines a cell type, and ID is displayed as an integer without the ',' separating 1000s.
+		  cell: Backgrid.IntegerCell.extend({
+		    orderSeparator: ''
+		  })
+		}, {
+		  name: "name",
+		  label: "Name",
+		  // The cell type can be a reference of a Backgrid.Cell subclass, any Backgrid.Cell subclass instances like *id* above, or a string
+		  cell: "string" // This is converted to "StringCell" and a corresponding class in the Backgrid package namespace is looked up
+		}, {
+		  name: "description",
+		  label: "Description",
+		  // The cell type can be a reference of a Backgrid.Cell subclass, any Backgrid.Cell subclass instances like *id* above, or a string
+		  cell: "string" // This is converted to "StringCell" and a corresponding class in the Backgrid package namespace is looked up
+		}, {
+		  name: "quantity",
+		  label: "Quantity",
+		  cell: "integer" // An integer cell is a number cell that displays humanized integers
+		}, {
+		  name: "amount",
+		  label: "Amount",
+		  cell: "number" // A cell type for floating point value, defaults to have a precision 2 decimal numbers
+		}, {
+		  name: "date",
+		  label: "Date",
+		  cell: Backgrid.Extension.MomentCell.extend({
+			 editor: MyDatePickerCellEditor,
+			 modelInUnixOffset: true,
+			 //displayInUnixOffset: false,
+			 //modelFormat: "YYYY-MM-DD",
+			 displayFormat: "YYYY-MM-DD"
+		  }) 
+		}, {
+		  name: "actions",
+		  cell: ActionCell
+			}];
+		
+		// Initialize a new Grid instance
+		var grid = new Backgrid.Grid({
+		  columns: columns,
+		  collection: items,
+		  className: "table table-bordered table-striped"
+		});
+		
+		// Render the grid and attach the Grid's root to your HTML document
+		$("#grid").append(grid.render().el);
+		$("#add").on("click", function(e) {
+			items.add(new Item());
+			console.log(items.length);
+			});
+		$("#addModal").on("click", function(e) {
+			//BootstrapDialog.
+			//items.add(new Item());
+			$("#itemModal").modal("show");
+			});
+		
+	});
+</script>
+
+}
